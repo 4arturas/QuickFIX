@@ -7,4 +7,111 @@ v1.0, 2020-11-14
 :icons: font
 :source-highlighter: prettify
 
+== QuickFIX
+
+=== Compile with maven
 mvn test -Dgenerator.decimal=true -DskipAT=true
+
+=== What is Fix protocol ?
+[plantuml, FixProtocol, png]
+....
+title Fix Protocol
+Trader -> Broker : Sends LogOn Request(MsgType=A)
+Broker -> Trader :
+....
+
+[plantuml, LogOn Request, png]
+....
+title LogOn Request[MsgType=A]
+class LogOnRequest {
+    type: MsgTypeA;
+    senderCompID: Object;
+    targetCompID: Object;
+    usr: char[];
+    pwd: char[];
+}
+....
+
+[plantuml, Login, png]
+....
+@startuml
+title Login
+|Trader|
+start
+:Trader LogOn;
+|Broker|
+if (Is msg construction OK?) then (no)
+    |Trader|
+    :Msg construction KO?<
+    stop
+else (yes)
+    |Broker|
+    if (Credentials Valid?) then (yes)
+        |Trader|
+        :LogIn(MsgType[35=A])<
+        stop
+    else (no)
+    |Trader|
+        :LogOff(MsgType=5)<
+        stop
+    endif
+endif
+@enduml
+....
+
+[plantuml, InitiatorAcceptor]
+....
+@startuml
+title Trader <-> Broker
+Initiator -> Acceptor :
+@enduml
+....
+
+What is *ResetSeqNumberFlag<141>=y* ?::
+What is *MsgSeqNum(34=1)* ?::
+*EncryptMethod<98>=0* - no encription is beeing used::
+*HartBtInt<108>=20(20 seconds)* - invocation from one party to the other set after predefined number of seconds, whereby the parties can inform each other, that yes we are both alive on the connection and we are processing messages efficiently::
+Header fields::
+- BeginString
+- BodyLength
+- Sending time
+- Credential values
+* SenderID
+* TargetId
+* Usr
+* Pwd
+
+- Standard Header:
+* 8=FIX.4.4|9=70|35=A|34=1|49=ABCD|52=20190430-16:04:05.000|56=EFGH|
+** 8
+** 9 body length 70
+** 35 logon message A
+** 34 first message sequence number 1
+** 49 sender comp id ABCD
+** 52 sending time in utc time zone
+** 56 target comp id EFGH
+- Message Body:
+* 98=0|108=20|141=Y|553=JOHNDOE|554=PASSW|
+** 98 encrypt method 0(no encription)
+** 108 hart beat interval 20 seconds
+** 141 reset sequence number flag Y
+** 553 user name
+** 554 user password
+- Standard Trailer:
+* 10=111
+** 10 check sum 111(for example purposes)
+
+== Check sum value calculation
+- Replace "|" with ASCII SOH(\001")
+- Encode string in utf-8 and convert to bytes latexmath:[bytes = (\sum\limits_{i=0}^{i=n-1} byte_i) \% 256 ]
+
+NOTE: If check sum is 2 digits not 3, the Fix protocl specification 4.4 dictates that checksum has to be exactly 3 characters, and result of this checksum is for example is "18", then I have to set checksum value to (10=018)
+
+== Body length field
+BodyLength<9> is the number of characters in the message following the BodyLength<9> tag=value pair, up to and including, the SOH character immediatly preceding the CheckSum<10> tag value pair.
+
+NOTE: It is ALWAYS the SECOND tag=value pair ina FIX message. It is ALWAYS unencrypted.
+
+
+https://www.stunnel.org/
+
