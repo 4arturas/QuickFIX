@@ -1,2 +1,8 @@
-# QuickFIX
-QuickFIX
+= QuickFIX
+v1.0, 2020-11-14
+:toc:
+:example-caption!:
+:sectnums:
+:sectnumlevels: 8
+:icons: font
+:source-highlighter: prettify
