@@ -6,3 +6,5 @@ v1.0, 2020-11-14
 :sectnumlevels: 8
 :icons: font
 :source-highlighter: prettify
+
+mvn test -Dgenerator.decimal=true -DskipAT=true
