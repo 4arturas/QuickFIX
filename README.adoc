@@ -10,6 +10,9 @@ v1.0, 2020-11-14
 == QuickFIX
 
 === Compile with maven
+
+https://stackoverflow.com/questions/35983928/how-to-send-fix-message-with-quickfix-j
+
 mvn test -Dgenerator.decimal=true -DskipAT=true
 
 === What is Fix protocol ?
@@ -103,7 +106,7 @@ Header fields::
 
 == Check sum value calculation
 - Replace "|" with ASCII SOH(\001")
-- Encode string in utf-8 and convert to bytes latexmath:[bytes = (\sum\limits_{i=0}^{i=n-1} byte_i) \% 256 ]
+- Encode string in utf-8 and convert to bytes latexmath:[checksum = (\sum\limits_{i=0}^{i=n-1} byte_i) \% 256 ]
 
 NOTE: If check sum is 2 digits not 3, the Fix protocl specification 4.4 dictates that checksum has to be exactly 3 characters, and result of this checksum is for example is "18", then I have to set checksum value to (10=018)
 
@@ -114,4 +117,98 @@ NOTE: It is ALWAYS the SECOND tag=value pair ina FIX message. It is ALWAYS unenc
 
 
 https://www.stunnel.org/
+
+== Variable Definitions
+
+link:https://www.onixs.biz/fix-dictionary/4.4/fields_by_tag.html[FIX 4.4 : Fields by Tag]
+
+[plantuml]
+....
+class Variable
+
+class Session {
+    BeginString;
+    SocketConnectionHost;
+    SocketConnectionPort;
+    TargetCompID;
+    PersistMessages;
+}
+Variable <|-- Session
+
+class Default {
+    StartDay/EndDay;
+    StartTime/EndTime;
+    HearBeatInt;
+    ResetOnLogon;
+    ResetSeqNumFlag;
+    EncryptMethod;
+    CheckLatency;
+    ORDER_TIMOUT;
+    FileStorPath;
+    FileLogPath;
+    ValidateFieldsHaveValues;
+    UseDataDictionary;
+    DataDictionary[FIX 4.4 : Fields by Tag];
+}
+Variable <|-- Default
+
+class Pricing {
+    ConnectionType=initiator;
+    StartDay=SUN;
+    EndDay=FRI;
+    StartTime=22:00:00;
+    EndTime=22:00:00;
+    HearBtInt=20;
+    ResetOnLogon=Y;
+    ResetSeqNumFlag=Y;
+    EncryptMethod=0;
+    CheckLatency=N;
+    ORDER_TIMEOUT=30000;
+    FileStorePath=Files;
+    FileLogPath=Log;
+    UseDataDictionary=Y;
+    DataDictionary=FIX44-1.7.xml;
+}
+Default <|-- Pricing
+
+class Trading {
+    ConnectionType=initiator;
+    StartDay=SUN;
+    EndDay=FRI;
+    StartTime=22:00:00;
+    EndTime=22:00:00;
+    HearBtInt=20;
+    ResetOnLogon=N;
+    ResetSeqNumFlag=N;
+    EncryptMethod=0;
+    CheckLatency=N;
+    ORDER_TIMEOUT=30000;
+    FileStorePath=Files;
+    FileLogPath=Log;
+    ValidateFieldsHaveValues=N;
+    UseDataDictionary=N;
+    DataDictionary=FIX44-1.7.xml;
+}
+Default <|-- Trading
+
+class PricingSession {
+    BeginString=FIX.4.4;
+    SocketConnectionHost=<INSERT FIX SERVER HOST>;
+    SocketConnectionPort=<INSERT FIX SERVER PORT>;
+    TargetCompID=<INSERT SENDER COMP ID>;
+    PersistMessages=N;
+}
+Session <|-- PricingSession
+Pricing --> "1" PricingSession
+
+class TradingSession {
+    BeginString=FIX.4.4;
+    SocketConnectionHost=127.0.0.1;
+    SocketConnectionPort=433;
+    TargetCompID=<INSERT SENDER COMP ID>;
+    * SocketConnectionHost > sTunel
+}
+Session <|-- TradingSession
+Trading --> "1" TradingSession
+....
 
